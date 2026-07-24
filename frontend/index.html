@@ -2,33 +2,112 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ClauseCheck</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 48px 20px;
+    }
+    h1 { font-size: 28px; margin-bottom: 4px; }
+    .subtitle { color: #64748b; margin-bottom: 32px; }
+    .upload-box {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 32px;
+      text-align: center;
+      background: white;
+    }
+    .filename { font-size: 13px; color: #64748b; margin-top: 8px; }
+    button {
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: #1e293b; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .error {
+      margin-top: 24px;
+      padding: 14px;
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #b91c1c;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .loading { font-size: 14px; color: #64748b; margin-top: 16px; }
+    section { margin-top: 32px; }
+    h2 { font-size: 17px; margin-bottom: 8px; }
+    .result-box {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 <body>
+
   <h1>ClauseCheck</h1>
-  <p>Understand what you're signing.</p>
+  <p class="subtitle">Understand what you're signing. Upload a lease, contract, or policy to get started.</p>
 
-  <input type="file" id="fileInput" accept="application/pdf" />
-  <button id="analyzeBtn">Analyze document</button>
+  <div class="upload-box">
+    <input type="file" id="fileInput" accept="application/pdf" />
+    <div class="filename" id="filenameDisplay"></div>
+    <br />
+    <button id="analyzeBtn" disabled>Analyze document</button>
+    <div class="loading" id="loadingText" style="display:none;">Analyzing...</div>
+  </div>
 
-  <div id="results"></div>
+  <div id="errorBox" class="error" style="display:none;"></div>
+
+  <section id="results" style="display:none;">
+    <h2>Extracted Text</h2>
+    <div class="result-box" id="resultBox"></div>
+  </section>
 
   <script>
     const fileInput = document.getElementById("fileInput");
+    const filenameDisplay = document.getElementById("filenameDisplay");
     const analyzeBtn = document.getElementById("analyzeBtn");
+    const loadingText = document.getElementById("loadingText");
+    const errorBox = document.getElementById("errorBox");
     const results = document.getElementById("results");
+    const resultBox = document.getElementById("resultBox");
+
+    let selectedFile = null;
+
+    fileInput.addEventListener("change", () => {
+      selectedFile = fileInput.files[0] || null;
+      filenameDisplay.textContent = selectedFile ? `Selected: ${selectedFile.name}` : "";
+      analyzeBtn.disabled = !selectedFile;
+    });
 
     analyzeBtn.addEventListener("click", async () => {
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("Please choose a PDF first.");
-        return;
-      }
+      if (!selectedFile) return;
 
-      results.textContent = "Analyzing...";
+      errorBox.style.display = "none";
+      results.style.display = "none";
+      loadingText.style.display = "block";
+      analyzeBtn.disabled = true;
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", selectedFile);
 
       try {
         const response = await fetch("http://localhost:8000/analyze", {
@@ -36,12 +115,22 @@
           body: formData,
         });
 
+        if (!response.ok) {
+          throw new Error("Failed to analyze document. Status: " + response.status);
+        }
+
         const data = await response.json();
-        results.textContent = JSON.stringify(data, null, 2);
+        resultBox.textContent = data.extracted_text;
+        results.style.display = "block";
       } catch (err) {
-        results.textContent = "Error: " + err.message;
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+      } finally {
+        loadingText.style.display = "none";
+        analyzeBtn.disabled = false;
       }
     });
   </script>
+
 </body>
 </html>
