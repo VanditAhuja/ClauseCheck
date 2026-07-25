@@ -1,34 +1,54 @@
-HIGH_RISK = [
+import os
+import json
+from groq import Groq
+from dotenv import load_dotenv
 
-    "without notice",
+load_dotenv()
 
-    "non-refundable",
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
-    "auto renew",
+RISK_PROMPT = """You are an expert legal assistant that flags risky or unusual \
+clauses in legal and financial documents (leases, insurance policies, contracts).
 
-    "penalty",
+Read the document text below and identify clauses that could be risky, \
+one-sided, unusual, or costly for the person signing. For each one, return:
+- "clause": a short quote or paraphrase (under 20 words) identifying the clause
+- "severity": "high", "medium", or "low"
+- "reason": a one-sentence plain-English explanation of why it's risky
 
-    "late fee",
+Return ONLY a JSON array, nothing else. No markdown fences, no preamble, no \
+extra text before or after. If there are no risky clauses, return an empty \
+array [].
 
-    "waive",
-
-    "terminate immediately",
-
-    "liability"
-
-]
-
+Document:
+{text}
+"""
 
 def detect_risk(text):
+    prompt = RISK_PROMPT.format(text=text)
 
-    risks = []
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.2
+    )
 
-    lower = text.lower()
+    raw_text = response.choices[0].message.content.strip()
 
-    for word in HIGH_RISK:
+    # Strip accidental markdown fences just in case
+    if raw_text.startswith("```"):
+        raw_text = raw_text.strip("`")
+        if raw_text.startswith("json"):
+            raw_text = raw_text[4:].strip()
 
-        if word in lower:
-
-            risks.append(word)
-
-    return risks
+    try:
+        return json.loads(raw_text)
+    except json.JSONDecodeError:
+        return []
