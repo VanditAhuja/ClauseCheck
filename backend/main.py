@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from summarizer import summarize_document
 from risk_detector import detect_risk
 from services.parser import extract_text_from_pdf
+from clause_comparator import compare_clauses
 
 app = FastAPI(title="ClauseCheck API")
 
@@ -26,10 +27,12 @@ async def analyze_document(file: UploadFile = File(...)):
     text = extract_text_from_pdf(file_bytes)
     summary = summarize_document(text)
     risk = detect_risk(text)
+    clauses = compare_clauses(text)
 
     return {
         "filename": file.filename,
         "text": text,
         "summary": summary,
-        "risk": risk
+        "risk": risk,
+        "clauses": clauses
     }
