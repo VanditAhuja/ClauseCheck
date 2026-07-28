@@ -11,6 +11,8 @@ client = Groq(
 
 def summarize_document(text):
 
+    text = text[:8000]  # keep requests within Groq's free-tier token limit
+
     prompt = f"""
 You are an expert legal assistant.
 

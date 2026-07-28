@@ -27,6 +27,7 @@ Document:
 """
 
 def detect_risk(text):
+    text = text[:8000]  # keep requests within Groq's free-tier token limit
     prompt = RISK_PROMPT.format(text=text)
 
     response = client.chat.completions.create(
