@@ -1,10 +1,15 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from summarizer import summarize_document
-from risk_detector import detect_risk
-from services.parser import extract_text_from_pdf
-from clause_comparator import compare_clauses
+from fastapi.responses import JSONResponse
 
+from backend.summarizer import summarize_document
+from backend.risk_detector import detect_risk
+from backend.services.parser import extract_text_from_pdf
+from backend.clause_comparator import compare_clauses
+from backend.chunker import chunk_text
+from backend.embeddings import create_embedding
+from backend.vector_store import store_chunks
+from backend.rag import ask_questionp
 app = FastAPI(title="ClauseCheck API")
 
 app.add_middleware(
