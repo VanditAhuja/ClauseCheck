@@ -1,5 +1,5 @@
-from backend.embeddings import create_embedding
-from backend.vector_store import search_similar
+from embeddings import create_embedding
+from vector_store import search_similar
 from groq import Groq
 from dotenv import load_dotenv
 import os

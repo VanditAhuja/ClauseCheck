@@ -1,15 +1,15 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
-from backend.summarizer import summarize_document
-from backend.risk_detector import detect_risk
-from backend.services.parser import extract_text_from_pdf
-from backend.clause_comparator import compare_clauses
-from backend.chunker import chunk_text
-from backend.embeddings import create_embedding
-from backend.vector_store import store_chunks
-from backend.rag import ask_questionp
+from fastapi.staticfiles import StaticFiles
+from summarizer import summarize_document
+from risk_detector import detect_risk
+from services.parser import extract_text_from_pdf
+from clause_comparator import compare_clauses
+from chunker import chunk_text
+from embeddings import create_embedding
+from vector_store import store_chunks
+from rag import ask_question
 app = FastAPI(title="ClauseCheck API")
 
 app.add_middleware(
@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+@app.get("/api/status")
 def health_check():
     return {
         "status": "ClauseCheck API is running"
@@ -34,6 +34,11 @@ async def analyze_document(file: UploadFile = File(...)):
     risk = detect_risk(text)
     clauses = compare_clauses(text)
 
+    # Chunk and store for Q&A
+    chunks = chunk_text(text)
+    embeddings = [create_embedding(chunk) for chunk in chunks]
+    store_chunks(chunks, embeddings)
+
     return {
         "filename": file.filename,
         "text": text,
@@ -41,3 +46,9 @@ async def analyze_document(file: UploadFile = File(...)):
         "risk": risk,
         "clauses": clauses
     }
+@app.post("/ask")
+async def ask(question: str = Form(...)):
+    answer = ask_question(question)
+    return {"answer": answer}
+app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+   
