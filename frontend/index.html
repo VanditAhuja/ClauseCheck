@@ -400,6 +400,81 @@
     margin-bottom: 12px;
   }
 
+  .ask-box {
+    display: flex;
+    gap: 10px;
+  }
+  .ask-input {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .ask-input:focus {
+    border-color: var(--gold-dim);
+  }
+  .ask-input::placeholder {
+    color: var(--muted);
+  }
+  .ask-btn {
+    padding: 12px 20px;
+    background: var(--gold);
+    color: #17140d;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    white-space: nowrap;
+  }
+  .ask-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .ask-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .qa-thread {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .qa-question {
+    align-self: flex-end;
+    background: rgba(212,175,106,0.12);
+    border: 1px solid rgba(212,175,106,0.25);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 12px 12px 2px 12px;
+    font-size: 13px;
+    max-width: 85%;
+  }
+  .qa-answer {
+    align-self: flex-start;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--panel-border);
+    color: #cfd4dc;
+    padding: 10px 14px;
+    border-radius: 12px 12px 12px 2px;
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 85%;
+  }
+  .qa-loading {
+    align-self: flex-start;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
   .error {
     margin-top: 24px;
     padding: 14px 16px;
@@ -603,6 +678,15 @@
         <div class="result-box" id="summaryBox"></div>
       </section>
 
+      <section id="qaSection" style="display:none;">
+        <h2>Ask About This Document</h2>
+        <div class="ask-box">
+          <input type="text" class="ask-input" id="askInput" placeholder="e.g. How much notice is required to terminate?" />
+          <button class="ask-btn" id="askBtn">Ask</button>
+        </div>
+        <div class="qa-thread" id="qaThread"></div>
+      </section>
+
       <section id="flagsSection" style="display:none;">
         <h2>Risk Flags</h2>
         <div id="flagsBox"></div>
@@ -634,6 +718,10 @@
     const results = document.getElementById("results");
     const summarySection = document.getElementById("summarySection");
     const summaryBox = document.getElementById("summaryBox");
+    const qaSection = document.getElementById("qaSection");
+    const askInput = document.getElementById("askInput");
+    const askBtn = document.getElementById("askBtn");
+    const qaThread = document.getElementById("qaThread");
     const flagsSection = document.getElementById("flagsSection");
     const flagsBox = document.getElementById("flagsBox");
     const clausesSection = document.getElementById("clausesSection");
@@ -844,11 +932,68 @@
         clausesSection.style.display = "none";
       }
 
+      // Show Q&A section once a document has been analyzed
+      qaSection.style.display = "block";
+      qaThread.innerHTML = "";
+
       // Raw extracted text (always available)
       textBox.textContent = data.text || "";
 
       results.classList.add("active");
     }
+
+    askBtn.addEventListener("click", async () => {
+      const question = askInput.value.trim();
+      if (!question) return;
+
+      const questionEl = document.createElement("div");
+      questionEl.className = "qa-question";
+      questionEl.textContent = question;
+      qaThread.appendChild(questionEl);
+
+      const loadingEl = document.createElement("div");
+      loadingEl.className = "qa-loading";
+      loadingEl.textContent = "Reading the document...";
+      qaThread.appendChild(loadingEl);
+
+      askInput.value = "";
+      askBtn.disabled = true;
+      qaThread.scrollTop = qaThread.scrollHeight;
+
+      const formData = new FormData();
+      formData.append("question", question);
+
+      try {
+        const response = await fetch("http://localhost:8000/ask", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get an answer. Status: " + response.status);
+        }
+
+        const data = await response.json();
+        loadingEl.remove();
+
+        const answerEl = document.createElement("div");
+        answerEl.className = "qa-answer";
+        answerEl.textContent = data.answer;
+        qaThread.appendChild(answerEl);
+      } catch (err) {
+        loadingEl.remove();
+        const errorEl = document.createElement("div");
+        errorEl.className = "qa-answer";
+        errorEl.textContent = "Sorry, something went wrong: " + err.message;
+        qaThread.appendChild(errorEl);
+      } finally {
+        askBtn.disabled = false;
+      }
+    });
+
+    askInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") askBtn.click();
+    });
 
     function escapeHtml(str) {
       const div = document.createElement("div");
