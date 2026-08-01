@@ -8,7 +8,7 @@ Understand what you're signing. ClauseCheck uses AI to turn confusing contracts,
 ![Home screen](screenshots/home.png)
 
 **AI-generated risk flags**
-![Risk flags](screenshots/riskflag.png)
+![Risk flags](screenshots/risk-flags.png)
 
 **Summary and Q&A**
 ![Summary and Q&A](screenshots/summary-qa.png)
