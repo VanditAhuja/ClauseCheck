@@ -84,6 +84,7 @@ GROQ_API_KEY=your_actual_key_here
 ```bash
 uvicorn main:app --reload
 ```
+**🔗 Live Demo:** [clausecheck-6vna.onrender.com](https://clausecheck-6vna.onrender.com)
 
 Visit `http://localhost:8000` — this serves the full app (frontend + API together).
 
