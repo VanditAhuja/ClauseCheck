@@ -50,5 +50,7 @@ async def analyze_document(file: UploadFile = File(...)):
 async def ask(question: str = Form(...)):
     answer = ask_question(question)
     return {"answer": answer}
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+import os
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
    
