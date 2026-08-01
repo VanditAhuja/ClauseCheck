@@ -869,7 +869,7 @@
       formData.append("file", selectedFile);
 
       try {
-        const response = await fetch("", {
+        const response = await fetch("/analyze", {
           method: "POST",
           body: formData,
         });
@@ -973,7 +973,7 @@
       formData.append("question", question);
 
       try {
-        const response = await fetch("", {
+        const response = await fetch("/ask", {
           method: "POST",
           body: formData,
         });
