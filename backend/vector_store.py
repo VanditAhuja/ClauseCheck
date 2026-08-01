@@ -1,29 +1,21 @@
-import chromadb
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-client = chromadb.Client()
+_vectorizer = None
+_matrix = None
+_chunks = []
 
-collection = client.get_or_create_collection(
-    name="contracts"
-)
+def store_chunks(chunks):
+    global _vectorizer, _matrix, _chunks
+    _chunks = chunks
+    _vectorizer = TfidfVectorizer().fit(chunks)
+    _matrix = _vectorizer.transform(chunks)
 
-def store_chunks(chunks, embeddings):
-    existing = collection.get()
-    if existing and existing.get("ids"):
-        collection.delete(ids=existing["ids"])
-
-    for index, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-        collection.add(
-            ids=[str(index)],
-            documents=[chunk],
-            embeddings=[embedding.tolist()]
-        )
-
-def search_similar(query_embedding, top_k=3):
-    results = collection.query(
-
-        query_embeddings=[query_embedding.tolist()],
-
-        n_results=top_k
-
-    )
-    return results["documents"][0]
+def search_similar(question, top_k=3):
+    global _vectorizer, _matrix, _chunks
+    if _vectorizer is None:
+        return []
+    query_vec = _vectorizer.transform([question])
+    sims = cosine_similarity(query_vec, _matrix)[0]
+    top_indices = sims.argsort()[-top_k:][::-1]
+    return [_chunks[i] for i in top_indices]

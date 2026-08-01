@@ -1,9 +1,7 @@
-from embeddings import create_embedding
 from vector_store import search_similar
 from groq import Groq
 from dotenv import load_dotenv
 import os
-
 load_dotenv()
 
 client = Groq(
@@ -12,11 +10,7 @@ client = Groq(
 
 
 def ask_question(question):
-
-    query_embedding = create_embedding(question)
-
-    relevant_chunks = search_similar(query_embedding)
-
+    relevant_chunks = search_similar(question)
     context = "\n\n".join(relevant_chunks)
 
     prompt = f"""

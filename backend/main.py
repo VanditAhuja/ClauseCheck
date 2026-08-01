@@ -1,3 +1,4 @@
+from email.mime import text
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,7 +8,6 @@ from risk_detector import detect_risk
 from services.parser import extract_text_from_pdf
 from clause_comparator import compare_clauses
 from chunker import chunk_text
-from embeddings import create_embedding
 from vector_store import store_chunks
 from rag import ask_question
 app = FastAPI(title="ClauseCheck API")
@@ -34,10 +34,8 @@ async def analyze_document(file: UploadFile = File(...)):
     risk = detect_risk(text)
     clauses = compare_clauses(text)
 
-    # Chunk and store for Q&A
     chunks = chunk_text(text)
-    embeddings = [create_embedding(chunk) for chunk in chunks]
-    store_chunks(chunks, embeddings)
+    store_chunks(chunks)
 
     return {
         "filename": file.filename,
@@ -46,6 +44,7 @@ async def analyze_document(file: UploadFile = File(...)):
         "risk": risk,
         "clauses": clauses
     }
+
 @app.post("/ask")
 async def ask(question: str = Form(...)):
     answer = ask_question(question)
