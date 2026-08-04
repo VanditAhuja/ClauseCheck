@@ -95,11 +95,6 @@ Visit `http://localhost:8000` — this serves the full app (frontend + API toget
 - **Large documents are truncated** — to stay within Groq's free-tier rate limits, document text is capped before being sent to the AI, so summaries/risk flags on very long documents may miss later sections.
 - **Not legal advice** — ClauseCheck provides general information only and should not be relied on as a substitute for professional legal advice.
 
-## Team
-
-- **Vandit Ahuja** — Frontend, backend integration
-- **[Teammate name]** — AI pipeline (summarization, risk detection, RAG/Q&A, clause comparison)
-
 ## Roadmap
 
 - [ ] Generalize clause comparator across document types
